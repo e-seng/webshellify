@@ -170,3 +170,12 @@ headers: {self.headers}
             )
 
         return self.__extract_output(resp.text)
+
+    def set_body(self, body):
+        self.body = body
+
+    def set_query_param(self, key, value):
+        self.queries[key] = value
+
+    def set_header(self, key, value):
+        self.header[key] = value
