@@ -27,7 +27,7 @@ class Webshellify:
     options then include:
     - debug: (boolean) Enable debugging messages, false by default
     """
-    def __init__(self, host, path, **args):
+    def __init__(self, host, path, debug=False, **args):
         # store necessary information that will improve the webshell
         self.workdir = "/"
         self.parentdir = "/"
@@ -41,9 +41,7 @@ class Webshellify:
         if(self.path[0] == '/'):
             self.path = path [1:]
 
-        self.debug = False
-        if("debug" in args.keys()):
-            self.debug = args["debug"]
+        self.debug = debug
 
         # necessary request information
         self.headers = {
