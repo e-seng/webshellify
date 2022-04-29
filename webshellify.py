@@ -70,6 +70,7 @@ class Webshellify:
         return f"""
             echo '`{self.delimiter}-user`'; whoami; echo '`/{self.delimiter}-user`';
             echo '`{self.delimiter}-host`'; uname -n; echo '`/{self.delimiter}-host`'
+            echo '`{self.delimiter}-wd`'; uname -n; echo '`/{self.delimiter}-wd`'
             echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'
             """
 
@@ -81,9 +82,11 @@ class Webshellify:
     def __extract_output(self, raw):
         user_regex = f"`{self.delimiter}-user`\n((.*\n)*)`\/{self.delimiter}-user`"
         host_regex = f"`{self.delimiter}-host`\n((.*\n)*)`\/{self.delimiter}-host`"
+        wd_regex = f"`{self.delimiter}-wd`\n((.*\n)*)`\/{self.delimiter}-wd`"
         output_regex = f"`{self.delimiter}`\n((.*\n)*)`\/{self.delimiter}`"
         user_re = re.compile(user_regex)
         host_re = re.compile(host_regex)
+        wd_re = re.compile(wd_regex)
         output_re = re.compile(output_regex)
         if(self.debug):
             print(f"""[debug] in funct `__extract_output`
@@ -92,10 +95,13 @@ user regex: {user_regex}
 match: {user_re.findall(raw)}
 host regex: {host_regex}
 match: {host_re.findall(raw)}
+host regex: {wd_regex}
+match: {wd_re.findall(raw)}
 output regex: {output_regex}
 match: {output_re.findall(raw)}""")
         user = user_re.findall(raw)[0][0]
         host = host_re.findall(raw)[0][0]
+        workdir = wd_re.findall(raw)[0][0]
         output = output_re.findall(raw)[0][0]
         return user, host, output
 
