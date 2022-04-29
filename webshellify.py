@@ -146,7 +146,7 @@ match: {output_re.findall(raw)}""")
 
         if(self.debug):
             print(f"""
-[debug] in funct `__extract_output`
+[debug] in funct `send_command`
 sent
 ----
 method: {self.method.upper()}
