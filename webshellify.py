@@ -9,8 +9,11 @@ The location to specify where the command would be is specified by adding the
 string "CMDFUZZ" in either the request body or request query. This fuzzing string
 can be altered if necessary.
 """
+from colorama import Back
+import getch
 import re
 import requests as req
+import sys
 
 class Webshellify:
     content_types = [
@@ -248,3 +251,55 @@ headers: {self.headers}
 
     def set_method(self, method):
         self.method = method
+
+class _input_str:
+    def input(self, print_str):
+        input_str = []
+        cursor_pos = 0
+        print(f" {print_str}", end='\r')
+        sys.stdout.flush()
+        last_char = ''
+        while(True):
+            str_len = len(print_str) + len(input_str) + 1
+            last_char = getch.getch()
+            if(last_char == '\x1b'): # some non-alphanumeric key was pressed
+                lc = ''
+                input_re = re.compile('[~A-D]')
+                while(not input_re.findall(last_char)):
+                    last_char += getch.getch()
+                if(last_char == '\x1b[A'):
+                    # up was pressed
+                    continue
+                if(last_char == '\x1b[B'):
+                    # down was pressed
+                    continue
+                if(last_char == '\x1b[C'):
+                    # right was pressed
+                    if(cursor_pos < len(input_str)): cursor_pos += 1
+                    continue
+                if(last_char == '\x1b[D'):
+                    # left was pressed
+                    if(cursor_pos - 1 > -1): cursor_pos -= 1
+                    continue
+
+            if(last_char == '\n'): # enter was pressed
+                sys.stdout.write('\n')
+                sys.stdout.flush()
+                break
+
+            if(last_char == '\x7f'): # backspace was pressed
+                if(cursor_pos - 1 > -1): cursor_pos -= 1
+                input_str.pop(cursor_pos)
+                sys.stdout.write('\r' +
+                        ' ' * str_len +
+                        f"\r {print_str}{''.join(input_str)}\r")
+                sys.stdout.flush()
+                continue
+
+            input_str.insert(cursor_pos, last_char)
+            cursor_pos += 1
+            sys.stdout.write('\r' +
+                    ' ' * str_len +
+                    f"\r {print_str}{''.join(input_str)}\r")
+            sys.stdout.flush()
+        return ''.join(input_str)

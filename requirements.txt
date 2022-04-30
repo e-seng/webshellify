@@ -1,0 +1,4 @@
+getch
+requests
+regex
+colorama
