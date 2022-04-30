@@ -9,7 +9,7 @@ The location to specify where the command would be is specified by adding the
 string "CMDFUZZ" in either the request body or request query. This fuzzing string
 can be altered if necessary.
 """
-from colorama import Back
+from colorama import Back, Fore, Style
 import getch
 import re
 import requests as req
@@ -254,10 +254,21 @@ headers: {self.headers}
 
 class _input_str:
     def input(self, print_str):
-        input_str = []
+        input_str = [' ']
+        input_length = 0
         cursor_pos = 0
-        print(f" {print_str}", end='\r')
+
+        str_len = len(print_str) + len(input_str) + 1
+        sys.stdout.write('\r' +
+                ' ' * str_len +
+                f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
+                Back.WHITE + Fore.BLACK +
+                input_str[cursor_pos] +
+                Style.RESET_ALL +
+                f"{''.join(input_str[cursor_pos+1:])}\r"
+                )
         sys.stdout.flush()
+
         last_char = ''
         while(True):
             str_len = len(print_str) + len(input_str) + 1
@@ -275,11 +286,29 @@ class _input_str:
                     continue
                 if(last_char == '\x1b[C'):
                     # right was pressed
-                    if(cursor_pos < len(input_str)): cursor_pos += 1
+                    if(cursor_pos < input_length): cursor_pos += 1
+                    sys.stdout.write('\r' +
+                            ' ' * str_len +
+                            f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
+                            Back.WHITE + Fore.BLACK +
+                            input_str[cursor_pos] +
+                            Style.RESET_ALL +
+                            f"{''.join(input_str[cursor_pos+1:])}\r"
+                            )
+                    sys.stdout.flush()
                     continue
                 if(last_char == '\x1b[D'):
                     # left was pressed
                     if(cursor_pos - 1 > -1): cursor_pos -= 1
+                    sys.stdout.write('\r' +
+                            ' ' * str_len +
+                            f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
+                            Back.WHITE + Fore.BLACK +
+                            input_str[cursor_pos] +
+                            Style.RESET_ALL +
+                            f"{''.join(input_str[cursor_pos+1:])}\r"
+                            )
+                    sys.stdout.flush()
                     continue
 
             if(last_char == '\n'): # enter was pressed
@@ -292,14 +321,25 @@ class _input_str:
                 input_str.pop(cursor_pos)
                 sys.stdout.write('\r' +
                         ' ' * str_len +
-                        f"\r {print_str}{''.join(input_str)}\r")
+                        f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
+                        Back.WHITE + Fore.BLACK +
+                        input_str[cursor_pos] +
+                        Style.RESET_ALL +
+                        f"{''.join(input_str[cursor_pos+1:])}\r"
+                        )
                 sys.stdout.flush()
                 continue
 
             input_str.insert(cursor_pos, last_char)
             cursor_pos += 1
+            input_length -= 1
             sys.stdout.write('\r' +
                     ' ' * str_len +
-                    f"\r {print_str}{''.join(input_str)}\r")
+                    f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
+                    Back.WHITE + Fore.BLACK +
+                    input_str[cursor_pos] +
+                    Style.RESET_ALL +
+                    f"{''.join(input_str[cursor_pos+1:])}\r"
+                    )
             sys.stdout.flush()
-        return ''.join(input_str)
+        return ''.join(input_str[:-1])
