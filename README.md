@@ -55,4 +55,12 @@ vulnerability as used [here](https://www.hackingarticles.in/presidential-1-vulnh
 
 ## Areas to test
 - Blind code executions
-- Parameter-based 
+- Parameter-based command injections
+
+Current testing has been done primarily using the `vulnerables/web-dvwa` docker
+container, found [here](https://github.com/opsxcq/docker-vulnerable-dvwa). The
+provided `main.py` file will authorize a `PHPSESSID` cookie and spawn a
+webshellify instace to use.
+
+## Contribution
+Issues and pull requests are welcome. May take some time to resolve though.
