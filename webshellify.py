@@ -73,8 +73,6 @@ class Webshellify:
         if(chdir):
             commands += f"cd {self.workdir};"
 
-        commands += f"echo '`{self.delimiter}-user`'; whoami; echo '`/{self.delimiter}-user`';"
-        commands += f"echo '`{self.delimiter}-host`'; uname -n; echo '`/{self.delimiter}-host`'"
         commands += f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'"
         commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`'"
         return commands
