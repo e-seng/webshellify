@@ -92,7 +92,7 @@ class Webshellify:
         #     print(f"[debug] in funct `__extract_output`:\nraw: {raw}")
 
         if(f"`{self.delimiter}`" not in raw):
-            raise Exception("[err] response data not found")
+            raise Exception("[warn] response data not found")
 
         user_regex = f"`{self.delimiter}-user`\n((.*\n)*)`\/{self.delimiter}-user`"
         wd_regex = f"`{self.delimiter}-wd`\n((.*\n)*)`\/{self.delimiter}-wd`"
@@ -184,10 +184,19 @@ headers: {self.headers}
         return '/'.join(path_parts[0:-1])
 
     def __get_init_info(self):
-        user, workdir, output = self.send_command("pwd")
-        self.workdir = workdir
-        self.parentdir = self.__get_parent_dir(workdir)
-        self.user = user
+        try:
+            user, workdir, output = self.send_command("whoami")
+            self.workdir = workdir
+            self.parentdir = self.__get_parent_dir(workdir)
+            self.user = user
+        except Exception as e:
+            print(e)
+            print("[info] may be a blind command execution?")
+            print("[info] if so, please set optional argument \"blind\" to True")
+            exit(1)
+            self.workdir = "/?/?"
+            self.parentdir = self.__get_parent_dir(self.workdir)
+            self.user = "?"
 
     def create_shell(self):
         self.__get_init_info()
@@ -231,6 +240,8 @@ headers: {self.headers}
                     continue
                 print("[note] exiting...")
                 return
+            except Exception as e:
+                print(e)
 
     def set_body(self, body):
         self.body = body
