@@ -226,7 +226,7 @@ headers: {self.headers}
                     print("[note] please press ^D or ^C again to close the program")
                     exit_confirm = True
                     continue
-                print("[note] exiting...")
+                print("\n[note] exiting...")
                 return
             except KeyboardInterrupt:
                 if(not exit_confirm):
@@ -234,7 +234,7 @@ headers: {self.headers}
                     print("[note] please press ^D or ^C again to close the program")
                     exit_confirm = True
                     continue
-                print("[note] exiting...")
+                print("\n[note] exiting...")
                 return
             except Exception as e:
                 print(e)
