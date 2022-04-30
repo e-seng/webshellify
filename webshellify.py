@@ -270,6 +270,18 @@ headers: {self.headers}
 
     def set_method(self, method):
         self.method = method
+
+    def set_fuzz_word(self, fuzz):
+        self.cmd_fuzz = fuzz
+
+    """
+    Changes the delimiter that isolates the program's output
+
+    This should be used if the server outputs data that matches the form of the
+    current delimiter
+    """
+    def set_delimiter(self, delimiter):
+        self.delimiter = delimiter
 """
 Attempts to improve the text input function that can be used in comparison to
 Python's built-in input function
