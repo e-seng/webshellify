@@ -213,10 +213,21 @@ headers: {self.headers}
                 self.workdir = workdir
                 self.parentdir = self.__get_parent_dir(workdir)
                 print(output)
+
+                exit_confirm = False
+            except EOFError:
+                if(not exit_confirm):
+                    print("[note] ^D pressed, this will close the current shell.")
+                    print("[note] please press ^D or ^C again to close the program")
+                    exit_confirm = True
+                    continue
+                print("[note] exiting...")
+                return
             except KeyboardInterrupt:
-                if(exit_confirm):
-                    print("[note] ^C pressed, this will close the current shell.")
-                    print("[note] please press ^C again to close the program")
+                if(not exit_confirm):
+                    print("[note] ^D pressed, this will close the current shell.")
+                    print("[note] please press ^D or ^C again to close the program")
+                    exit_confirm = True
                     continue
                 print("[note] exiting...")
                 return
