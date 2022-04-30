@@ -12,7 +12,7 @@ may be used to further an attack and gain persistence on the victim.
 To properly use webshellify, the ip address or hostname of a server with an
 existing web shell vulnerability along with its path must be specifed.
 
-```py=
+```py
 import Webshellify from webshellify
 
 shell = Webshellify("http://localhost", "/path/to/webshell.php")
