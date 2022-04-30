@@ -173,11 +173,25 @@ headers: {self.headers}
 
         return self.__extract_output(resp.text)
 
+    """
+    Reads the current working directory and returns the parent directory
+    relative to it
+
+    parameters
+    ----------
+    workdir: (string) the current working directory
+
+    returns the parent directory
+    """
     def __get_parent_dir(self, workdir):
         # currently assuming a Linux machine, so paths are delimited by '/'
         path_parts = workdir.split('/')
         return '/'.join(path_parts[0:-1])
 
+    """
+    Fetches information of the user and the initial working directory upon an
+    initial load of an interactive shell
+    """
     def __get_init_info(self):
         try:
             workdir, whoami = self.send_command("whoami")
@@ -193,6 +207,10 @@ headers: {self.headers}
             self.parentdir = self.__get_parent_dir(self.workdir)
             self.user = "?"
 
+    """
+    Creates an interactive shell that connects to the hostname and path as
+    specified during initialization.
+    """
     def create_shell(self):
         input_handler = _input_str()
         self.__get_init_info()
@@ -252,11 +270,17 @@ headers: {self.headers}
 
     def set_method(self, method):
         self.method = method
-
+"""
+Attempts to improve the text input function that can be used in comparison to
+Python's built-in input function
+"""
 class _input_str:
     def __init__(self):
         self.history = []
 
+    """
+    Updates the input prompt with the provided information
+    """
     def __print_input(self, print_str, input_str, cursor_pos):
         input_length = len(input_str) - 1
         str_len = len(print_str) + len(input_str)
@@ -270,6 +294,20 @@ class _input_str:
                 )
         sys.stdout.flush()
 
+    """
+    Attempts to be an improved version of Python's input function
+
+    parameters
+    ----------
+    print_str: (string) The string to print as a prompt for the input
+
+    this input function currently supports:
+    - arrow key cursor movement (left and right)
+    - arrow key history traversal (up and down)
+    - character deletion (del, backspace)
+    - home and end key cursor movement
+    - general character input
+    """
     def input(self, print_str):
         input_str = [' ']
         cursor_pos = 0
