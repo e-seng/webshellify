@@ -11,7 +11,6 @@ can be altered if necessary.
 """
 import re
 import requests as req
-import urllib.parse
 
 class Webshellify:
     content_types = [
@@ -218,7 +217,7 @@ headers: {self.headers}
                 exit_confirm = False
             except EOFError:
                 if(not exit_confirm):
-                    print("[note] ^D pressed, this will close the current shell.")
+                    print("\n[note] ^D pressed, this will close the current shell.")
                     print("[note] please press ^D or ^C again to close the program")
                     exit_confirm = True
                     continue
@@ -226,7 +225,7 @@ headers: {self.headers}
                 return
             except KeyboardInterrupt:
                 if(not exit_confirm):
-                    print("[note] ^D pressed, this will close the current shell.")
+                    print("\n[note] ^C pressed, this will close the current shell.")
                     print("[note] please press ^D or ^C again to close the program")
                     exit_confirm = True
                     continue
