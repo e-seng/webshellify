@@ -1,3 +1,5 @@
+# created by e-seng on Github
+# https://github.com/e-seng/webshellify
 from colorama import Back, Fore, Style
 import getch
 import re
