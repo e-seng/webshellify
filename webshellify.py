@@ -258,12 +258,8 @@ class _input_str:
     def __init__(self):
         self.history = []
 
-    def input(self, print_str):
-        input_str = [' ']
-        input_length = 0
-        cursor_pos = 0
-        history_pos = len(self.history)
-
+    def __print_input(self, print_str, input_str, cursor_pos):
+        input_length = len(input_str) - 1
         str_len = len(print_str) + len(input_str)
         sys.stdout.write('\r' +
                 ' ' * str_len +
@@ -275,6 +271,14 @@ class _input_str:
                 )
         sys.stdout.flush()
 
+    def input(self, print_str):
+        input_str = [' ']
+        cursor_pos = 0
+        input_length = 0
+        history_pos = len(self.history)
+
+        self.__print_input(print_str, input_str, cursor_pos)
+
         last_char = ''
         while(True):
             str_len = len(print_str) + len(input_str) + 1
@@ -284,76 +288,79 @@ class _input_str:
                 input_re = re.compile('[~A-D]')
                 while(not input_re.findall(last_char)):
                     last_char += getch.getch()
+
                 if(last_char == '\x1b[A'):
                     # up was pressed
                     if(len(self.history) == 0):
                         # no history available
                         continue
                     if(history_pos > 0): history_pos -= 1
+                    last_str_len = input_length
                     input_str = list(self.history[history_pos])
                     input_str.append(' ')
                     cursor_pos = len(input_str) - 1
+                    input_length = len(input_str) - 1
 
-                    sys.stdout.write('\r' +
-                            ' ' * str_len +
-                            f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
-                            Back.WHITE + Fore.BLACK +
-                            input_str[cursor_pos] +
-                            Style.RESET_ALL +
-                            f"{''.join(input_str[cursor_pos+1:])}\r"
-                            )
-                    sys.stdout.flush()
+                    self.__print_input(print_str, input_str + [' '] * last_str_len, cursor_pos)
                     continue
+
                 if(last_char == '\x1b[B'):
                     # down was pressed
                     if(len(self.history) == 0):
                         # no history available
                         continue
                     if(history_pos < len(self.history)): history_pos += 1
+                    last_str_len = input_length
                     input_str = []
                     if(history_pos < len(self.history)):
                         input_str = list(self.history[history_pos])
                     input_str.append(' ')
                     cursor_pos = len(input_str) - 1
+                    input_length = len(input_str) - 1
 
-                    sys.stdout.write('\r' +
-                            ' ' * str_len +
-                            f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
-                            Back.WHITE + Fore.BLACK +
-                            input_str[cursor_pos] +
-                            Style.RESET_ALL +
-                            f"{''.join(input_str[cursor_pos+1:])}\r"
-                            )
-                    sys.stdout.flush()
+                    self.__print_input(print_str, input_str + [' '] * last_str_len, cursor_pos)
                     continue
+
                 if(last_char == '\x1b[C'):
                     # right was pressed
                     if(cursor_pos < input_length): cursor_pos += 1
-                    sys.stdout.write('\r' +
-                            ' ' * str_len +
-                            f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
-                            Back.WHITE + Fore.BLACK +
-                            input_str[cursor_pos] +
-                            Style.RESET_ALL +
-                            f"{''.join(input_str[cursor_pos+1:])}\r"
-                            )
-                    sys.stdout.flush()
+
+                    self.__print_input(print_str, input_str, cursor_pos)
                     continue
+
                 if(last_char == '\x1b[D'):
                     # left was pressed
-                    if(cursor_pos - 1 > -1): cursor_pos -= 1
-                    sys.stdout.write('\r' +
-                            ' ' * str_len +
-                            f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
-                            Back.WHITE + Fore.BLACK +
-                            input_str[cursor_pos] +
-                            Style.RESET_ALL +
-                            f"{''.join(input_str[cursor_pos+1:])}\r"
-                            )
-                    sys.stdout.flush()
+                    if(cursor_pos > 0): cursor_pos -= 1
+
+                    self.__print_input(print_str, input_str, cursor_pos)
+                    continue
+
+                if(last_char == '\x1b[3~'):
+                    # delete was pressed
+                    if(cursor_pos == input_length): continue
+                    if(input_length == 0): continue
+                    input_str.pop(cursor_pos)
+
+                    self.__print_input(print_str, input_str + [' '], cursor_pos)
+                    input_length -= 1
+                    continue
+
+                if(last_char == '\x1b[7~'):
+                    # home was pressed
+                    cursor_pos = 0
+
+                    self.__print_input(print_str, input_str, cursor_pos)
+                    continue
+
+                if(last_char == '\x1b[8~'):
+                    # end was pressed
+                    cursor_pos = input_length
+
+                    self.__print_input(print_str, input_str, cursor_pos)
                     continue
 
             if(last_char == '\x04'): # EOF was entered
+                if(input_length > 0): continue
                 raise EOFError("EOF was entered by user")
 
             if(last_char == '\n'): # enter was pressed
@@ -362,31 +369,19 @@ class _input_str:
                 break
 
             if(last_char == '\x7f'): # backspace was pressed
-                if(cursor_pos - 1 > -1): cursor_pos -= 1
+                if(input_length == 0): continue
+                if(cursor_pos > 0): cursor_pos -= 1
                 input_str.pop(cursor_pos)
-                sys.stdout.write('\r' +
-                        ' ' * str_len +
-                        f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
-                        Back.WHITE + Fore.BLACK +
-                        input_str[cursor_pos] +
-                        Style.RESET_ALL +
-                        f"{''.join(input_str[cursor_pos+1:])}\r"
-                        )
-                sys.stdout.flush()
+
+                self.__print_input(print_str, input_str + [' '], cursor_pos)
+                input_length -= 1
                 continue
 
             input_str.insert(cursor_pos, last_char)
             cursor_pos += 1
-            input_length -= 1
-            sys.stdout.write('\r' +
-                    ' ' * str_len +
-                    f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
-                    Back.WHITE + Fore.BLACK +
-                    input_str[cursor_pos] +
-                    Style.RESET_ALL +
-                    f"{''.join(input_str[cursor_pos+1:])}\r"
-                    )
-            sys.stdout.flush()
+            input_length += 1
+
+            self.__print_input(print_str, input_str, cursor_pos)
         command = ''.join(input_str[:-1])
         self.history.append(command)
         return command
