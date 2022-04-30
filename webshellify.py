@@ -281,7 +281,10 @@ class _input_str:
         last_char = ''
         while(True):
             str_len = len(print_str) + len(input_str) + 1
-            last_char = getch.getch()
+            try:
+                last_char = getch.getch()
+            except OverflowError:
+                pass
             if(last_char == '\x1b'): # some non-alphanumeric key was pressed
                 lc = ''
                 input_re = re.compile('[~A-D]')
