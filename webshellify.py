@@ -201,8 +201,7 @@ headers: {self.headers}
         while(True):
             try:
                 current_dir = self.workdir
-                shell_prompt = f"{self.user}@{self.host} : {current_dir} > "
-                # command = input(shell_prompt)
+                shell_prompt = f"{self.user}@{self.host}:{current_dir} $ "
                 command = input_handler.input(shell_prompt)
 
                 if(" .." in command):
@@ -263,7 +262,7 @@ class _input_str:
         str_len = len(print_str) + len(input_str)
         sys.stdout.write('\r' +
                 ' ' * str_len +
-                f"\r {print_str}{''.join(input_str[:cursor_pos])}" +
+                f"\r>{print_str}{''.join(input_str[:cursor_pos])}" +
                 Back.WHITE + Fore.BLACK +
                 input_str[cursor_pos] +
                 Style.RESET_ALL +
