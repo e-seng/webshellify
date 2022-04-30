@@ -194,6 +194,7 @@ headers: {self.headers}
             self.user = "?"
 
     def create_shell(self):
+        input_handler = _input_str()
         self.__get_init_info()
         # capture KeyboardInterrupts
         exit_confirm = False
@@ -201,7 +202,8 @@ headers: {self.headers}
             try:
                 current_dir = self.workdir
                 shell_prompt = f"{self.user}@{self.host} : {current_dir} > "
-                command = input(shell_prompt)
+                # command = input(shell_prompt)
+                command = input_handler.input(shell_prompt)
 
                 if(" .." in command):
                     command.replace(" ..", f" {self.parentdir}")
