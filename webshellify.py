@@ -94,24 +94,19 @@ class Webshellify:
         if(f"`{self.delimiter}`" not in raw):
             raise Exception("[warn] response data not found")
 
-        user_regex = f"`{self.delimiter}-user`\n((.*\n)*)`\/{self.delimiter}-user`"
         wd_regex = f"`{self.delimiter}-wd`\n((.*\n)*)`\/{self.delimiter}-wd`"
         output_regex = f"`{self.delimiter}`\n((.*\n)*)`\/{self.delimiter}`"
-        user_re = re.compile(user_regex)
         wd_re = re.compile(wd_regex)
         output_re = re.compile(output_regex)
         if(self.debug):
             print(f"""[debug] in funct `__extract_output`
-user regex: {user_regex}
-match: {user_re.findall(raw)}
 wd regex: {wd_regex}
 match: {wd_re.findall(raw)}
 output regex: {output_regex}
 match: {output_re.findall(raw)}""")
-        user = user_re.findall(raw)[0][0][:-1]
         workdir = wd_re.findall(raw)[0][0][:-1]
         output = output_re.findall(raw)[0][0][:-1]
-        return user, workdir, output
+        return workdir, output
 
     """
     Sends an individual command in isolation to the host and path initialized.
@@ -185,10 +180,10 @@ headers: {self.headers}
 
     def __get_init_info(self):
         try:
-            user, workdir, output = self.send_command("whoami")
+            workdir, whoami = self.send_command("whoami")
             self.workdir = workdir
             self.parentdir = self.__get_parent_dir(workdir)
-            self.user = user
+            self.user = whoami
         except Exception as e:
             print(e)
             print("[info] may be a blind command execution?")
@@ -204,7 +199,7 @@ headers: {self.headers}
         exit_confirm = False
         while(True):
             try:
-                current_dir = self.workdir.split('/')[-1]
+                current_dir = self.workdir
                 shell_prompt = f"{self.user}@{self.host} : {current_dir} > "
                 command = input(shell_prompt)
 
@@ -217,8 +212,7 @@ headers: {self.headers}
                 if(self.debug):
                     print(f"[debug] in funct `create_shell`\nworking directory : {self.workdir}\nparent directory : {self.parentdir}")
 
-                user, workdir, output = self.send_command(command, chdir=True)
-                self.user = user
+                workdir, output = self.send_command(command, chdir=True)
                 self.workdir = workdir
                 self.parentdir = self.__get_parent_dir(workdir)
                 print(output)
