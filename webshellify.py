@@ -1,6 +1,7 @@
 # created by e-seng on Github
 # https://github.com/e-seng/webshellify
 from colorama import Back, Fore, Style
+import cursor
 import getch
 import re
 import requests as req
@@ -228,6 +229,7 @@ headers: {self.headers}
         self.__get_init_info()
         # capture KeyboardInterrupts
         exit_confirm = False
+        cursor.hide()
         while(True):
             try:
                 current_dir = self.workdir
@@ -256,7 +258,7 @@ headers: {self.headers}
                     exit_confirm = True
                     continue
                 print("\n[note] exiting...")
-                return
+                break
             except KeyboardInterrupt:
                 if(not exit_confirm):
                     print("\n[note] ^C pressed, this will close the current shell.")
@@ -264,9 +266,10 @@ headers: {self.headers}
                     exit_confirm = True
                     continue
                 print("\n[note] exiting...")
-                return
+                break
             except Exception as e:
                 print(e)
+        cursor.show()
 
     def set_body(self, body):
         self.body = body
