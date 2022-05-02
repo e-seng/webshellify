@@ -307,15 +307,18 @@ class _input_str:
         Updates the input prompt with the provided information
         """
         input_length = len(input_str) - 1
-        str_len = len(print_str) + len(input_str)
+        print_str = f"{print_str}{''.join(input_str[:cursor_pos])}" + \
+                Back.WHITE + Fore.BLACK + \
+                input_str[cursor_pos] + \
+                Style.RESET_ALL + \
+                f"{''.join(input_str[cursor_pos+1:])}"
+        str_len = len(print_str) - (len(Style.RESET_ALL) + \
+                len(Back.WHITE) + \
+                len(Fore.BLACK))
         sys.stdout.write('\r' +
                 ' ' * str_len +
-                f"\r>{print_str}{''.join(input_str[:cursor_pos])}" +
-                Back.WHITE + Fore.BLACK +
-                input_str[cursor_pos] +
-                Style.RESET_ALL +
-                f"{''.join(input_str[cursor_pos+1:])}\r"
-                )
+                f"\r{print_str}\r"
+        )
         sys.stdout.flush()
 
     def input(self, print_str):
