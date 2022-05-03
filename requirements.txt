@@ -2,3 +2,4 @@ getch
 requests
 regex
 colorama
+cursor
