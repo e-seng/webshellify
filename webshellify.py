@@ -305,19 +305,27 @@ class _input_str:
     def __init__(self):
         self.history = []
 
-    def __print_input(self, print_str, input_str, cursor_pos):
+    def __print_input(self, print_str, input_str, cursor_pos=-1):
         """
         Updates the input prompt with the provided information
         """
         input_length = len(input_str) - 1
-        print_str = f"{print_str}{''.join(input_str[:cursor_pos])}" + \
-                Back.WHITE + Fore.BLACK + \
+        cursor_style = Back.WHITE + Fore.BLACK
+
+        cursor_str = ''.join(input_str[:cursor_pos]) + \
+                cursor_style + \
                 input_str[cursor_pos] + \
                 Style.RESET_ALL + \
                 f"{''.join(input_str[cursor_pos+1:])}"
+
+        if(cursor_pos < 0):
+            cursor_style = ""
+            cursor_str = Style.RESET_ALL + \
+                    f"{''.join(input_str)}"
+
+        print_str = f"{print_str}{cursor_str}"
         str_len = len(print_str) - (len(Style.RESET_ALL) + \
-                len(Back.WHITE) + \
-                len(Fore.BLACK))
+                len(cursor_style))
         sys.stdout.write('\r' +
                 ' ' * str_len +
                 f"\r{print_str}\r"
@@ -430,10 +438,12 @@ class _input_str:
                     continue
 
             if(last_char == '\x04'): # EOF was entered
+                self.__print_input(print_str, input_str)
                 if(input_length > 0): continue
                 raise EOFError("EOF was entered by user")
 
             if(last_char == '\n'): # enter was pressed
+                self.__print_input(print_str, input_str)
                 sys.stdout.write('\n')
                 sys.stdout.flush()
                 break
