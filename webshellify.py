@@ -437,6 +437,8 @@ class _input_str:
                     self.__print_input(print_str, input_str, cursor_pos)
                     continue
 
+                continue
+
             if(last_char == '\x15'): # ^U was entered, clear input
                 input_str = [' ']
                 cursor_pos = len(input_str) - 1
