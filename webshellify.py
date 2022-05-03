@@ -437,6 +437,14 @@ class _input_str:
                     self.__print_input(print_str, input_str, cursor_pos)
                     continue
 
+            if(last_char == '\x15'): # ^U was entered, clear input
+                input_str = [' ']
+                cursor_pos = len(input_str) - 1
+
+                self.__print_input(print_str, [' '] * (input_length + 1), cursor_pos)
+                input_length = 0
+                continue
+
             if(last_char == '\x04'): # EOF was entered
                 self.__print_input(print_str, input_str)
                 if(input_length > 0): continue
