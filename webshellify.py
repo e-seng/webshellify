@@ -259,7 +259,8 @@ headers: {self.headers}
                 break
             except KeyboardInterrupt:
                 if(not exit_confirm):
-                    print("\n[note] ^C pressed, this will close the current shell.")
+                    print("\n[note] ^C pressed, not waiting for response anymore")
+                    print("[note] the last process may still be running on victim's machine")
                     print("[note] please press ^D or ^C again to close the program")
                     exit_confirm = True
                     continue
