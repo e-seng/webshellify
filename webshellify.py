@@ -144,11 +144,9 @@ match: {output_re.findall(raw)}""")
             cookie_dict[key] = value
 
         # generate body (if it is neither a GET nor a HEAD request)
-        body_str = ""
-        if(self.method.upper() != "GET" and self.method.upper() != "HEAD"):
-            body_str = self.body
-            if(self.cmd_fuzz in body_str):
-                body_str = body_str.replace(self.cmd_fuzz, cmd)
+        body_str = self.body
+        if(self.cmd_fuzz in body_str):
+            body_str = body_str.replace(self.cmd_fuzz, cmd)
 
         # generate url
         url = f"http://{self.host}/{self.path}{query_str}"
