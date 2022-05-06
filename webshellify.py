@@ -78,8 +78,8 @@ class Webshellify:
         if(chdir):
             commands += f"cd {self.workdir};"
 
-        commands += f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`'"
-        commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`'"
+        commands += f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`';"
+        commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`';"
         return commands
 
     def __extract_output(self, raw):
