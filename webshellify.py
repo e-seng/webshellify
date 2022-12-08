@@ -231,32 +231,6 @@ match: {output_re.findall(raw)}""")
                 print(e)
         cursor.show()
 
-    def set_body(self, body):
-        self.body = body
-
-    def set_query_param(self, key, value):
-        self.queries[key] = value
-
-    def set_header(self, key, value):
-        self.headers[key] = value
-
-    def set_cookie(self, key, value):
-        self.cookies[key] = value
-
-    def set_method(self, method):
-        self.method = method
-
-    def set_fuzz_word(self, fuzz):
-        self.cmd_fuzz = fuzz
-
-    def set_delimiter(self, delimiter):
-        """
-        Changes the delimiter that isolates the program's output
-
-        This should be used if the server outputs data that matches the form of the
-        current delimiter
-        """
-        self.delimiter = delimiter
 class _input_str:
     """
     Attempts to improve the text input function that can be used in comparison to
