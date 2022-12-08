@@ -60,10 +60,16 @@ class Webshellify:
         """
         commands = ""
         if(chdir):
-            commands += f"cd {self.workdir};"
+            commands += f"cd {self.workdir} && "
 
-        commands += f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`';"
-        commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`';"
+        command = re.sub("(\.\.$)|(\.\.\/)", self.parentdir+'/', command)
+        command = re.sub("(\.$)|(\.\/)", self.parentdir+'/', command)
+
+        commands += f"echo '`{self.delimiter}`' && {command} && echo '`/{self.delimiter}`' && "
+        commands += f"echo '`{self.delimiter}-wd`' && pwd && echo '`/{self.delimiter}-wd`';"
+
+        if(self.debug):
+            print(f"cmd is: {commands}")
         return commands
 
     def __extract_output(self, raw):
