@@ -9,8 +9,11 @@ traversal and directory traversal. Using this, a basic terminal experience
 may be used to further an attack and gain persistence on the victim.
 
 ## Usage
-To properly use webshellify, the ip address or hostname of a server with an
-existing web shell vulnerability along with its path must be specifed.
+To properly use webshellify, some exploit funciton should be defined that
+executes the command provided as the argument. This function should then return
+the response data associated with the request. This output does not need to be
+filtered, as Webshellify will extract any output data associated with the input
+command.
 
 ```py
 import Webshellify from webshellify
@@ -22,10 +25,8 @@ def exploit_function(cmd) -> str:
   # exploit goes here ...
   return response.text
 ```
-Here, the `exploit_function` is some user-defined function that takes in some OS
-command and returns the full, visible response from the server.
 
-Calling `create_shell()` will emulate an interactive shell that can be used to
+Calling `.create_shell()` will emulate an interactive shell that can be used to
 interact with the web shell.
 
 ## Known Issues
