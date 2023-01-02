@@ -4,8 +4,8 @@ A python thing to improve webshell usage
 Connecting webshellify to an existing vulnerable web shell improves the user
 experience when interacting with that web shell.
 
-Webshellify provides a user a terminal emulation, allowing for command history
-traversal and working directory changing. Using this, a basic terminal experience
+Webshellify provides a user a terminal emulator, allowing for command history
+traversal and directory traversal. Using this, a basic terminal experience
 may be used to further an attack and gain persistence on the victim.
 
 ## Usage
